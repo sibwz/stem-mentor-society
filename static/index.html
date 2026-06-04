@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STEM Mentor Society</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1f2937;
+    --border: #374151;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --pink: #ec4899;
+    --teal: #14b8a6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  header .logo { font-size: 2rem; }
+  header h1 { font-size: 1.5rem; font-weight: 700; background: linear-gradient(90deg, #a5b4fc, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  header p { font-size: 0.8rem; color: var(--muted); }
+  .agents-bar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 2rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .agent-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1.5px solid transparent;
+    opacity: 0.5;
+    transition: all 0.3s;
+  }
+  .agent-chip.active { opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px currentColor; }
+  .chip-coordinator { color: #a5b4fc; border-color: #a5b4fc; }
+  .chip-math { color: #60a5fa; border-color: #60a5fa; }
+  .chip-physics { color: #34d399; border-color: #34d399; }
+  .chip-cs { color: #fb923c; border-color: #fb923c; }
+  .chip-chembio { color: #f472b6; border-color: #f472b6; }
+  .chip-synthesizer { color: #facc15; border-color: #facc15; }
+  .main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+    height: calc(100vh - 130px);
+  }
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .msg {
+    display: flex;
+    gap: 0.75rem;
+    animation: fadeIn 0.3s ease;
+    max-width: 900px;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    border: 2px solid;
+  }
+  .msg-body { flex: 1; }
+  .msg-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+  .msg-name { font-size: 0.75rem; font-weight: 700; }
+  .msg-type-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .badge-thinking { background: #374151; color: var(--muted); }
+  .badge-speaking { background: #1e3a5f; color: #93c5fd; }
+  .badge-debate { background: #7c2d12; color: #fdba74; }
+  .badge-final { background: #14532d; color: #6ee7b7; }
+  .badge-status { background: #3b0764; color: #d8b4fe; }
+  .msg-content {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    border-left: 3px solid;
+  }
+  .msg-content h1, .msg-content h2, .msg-content h3 {
+    margin: 0.5rem 0 0.25rem;
+    color: inherit;
+  }
+  .msg-content p { margin-bottom: 0.5rem; }
+  .msg-content ul, .msg-content ol { padding-left: 1.2rem; margin-bottom: 0.5rem; }
+  .msg-content li { margin-bottom: 0.2rem; }
+  .msg-content code {
+    background: rgba(0,0,0,0.3);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.8em;
+  }
+  .msg-content pre {
+    background: rgba(0,0,0,0.4);
+    padding: 0.75rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+  }
+  .msg-content pre code { background: none; padding: 0; }
+  .msg-content strong { font-weight: 700; }
+  /* Agent colors */
+  .agent-coordinator .msg-avatar { color: #a5b4fc; border-color: #a5b4fc; background: rgba(165,180,252,0.1); }
+  .agent-coordinator .msg-name { color: #a5b4fc; }
+  .agent-coordinator .msg-content { border-color: #a5b4fc; background: rgba(165,180,252,0.05); }
+  .agent-math .msg-avatar { color: #60a5fa; border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+  .agent-math .msg-name { color: #60a5fa; }
+  .agent-math .msg-content { border-color: #60a5fa; background: rgba(96,165,250,0.05); }
+  .agent-physics .msg-avatar { color: #34d399; border-color: #34d399; background: rgba(52,211,153,0.1); }
+  .agent-physics .msg-name { color: #34d399; }
+  .agent-physics .msg-content { border-color: #34d399; background: rgba(52,211,153,0.05); }
+  .agent-cs .msg-avatar { color: #fb923c; border-color: #fb923c; background: rgba(251,146,60,0.1); }
+  .agent-cs .msg-name { color: #fb923c; }
+  .agent-cs .msg-content { border-color: #fb923c; background: rgba(251,146,60,0.05); }
+  .agent-chembio .msg-avatar { color: #f472b6; border-color: #f472b6; background: rgba(244,114,182,0.1); }
+  .agent-chembio .msg-name { color: #f472b6; }
+  .agent-chembio .msg-content { border-color: #f472b6; background: rgba(244,114,182,0.05); }
+  .agent-synthesizer .msg-avatar { color: #facc15; border-color: #facc15; background: rgba(250,204,21,0.1); }
+  .agent-synthesizer .msg-name { color: #facc15; }
+  .agent-synthesizer .msg-content { border-color: #facc15; background: rgba(250,204,21,0.05); }
+  .msg-content.thinking-style { opacity: 0.7; font-style: italic; }
+  .thinking-dots::after {
+    content: '...';
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+  .debate-header {
+    background: linear-gradient(90deg, rgba(239,68,68,0.2), rgba(251,146,60,0.2));
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fca5a5;
+    text-align: center;
+    margin: 0.5rem 0;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .synthesis-container {
+    background: linear-gradient(135deg, rgba(250,204,21,0.05), rgba(168,85,247,0.05));
+    border: 1px solid rgba(250,204,21,0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .synthesis-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #facc15;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .input-area {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .input-row { display: flex; gap: 0.75rem; align-items: flex-end; }
+  .input-wrap { flex: 1; position: relative; }
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 52px;
+    max-height: 140px;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+  .btn-send {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-send:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .options-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  .level-select {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .example-btn {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .example-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 2rem;
+    text-align: center;
+    gap: 1rem;
+    color: var(--muted);
+  }
+  .welcome-icon { font-size: 4rem; }
+  .welcome h2 { font-size: 1.5rem; color: var(--text); }
+  .welcome p { max-width: 500px; font-size: 0.9rem; line-height: 1.6; }
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    max-width: 480px;
+    margin-top: 0.5rem;
+  }
+  .agent-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem;
+    font-size: 0.75rem;
+  }
+  .agent-card .emoji { font-size: 1.2rem; }
+  .progress-bar {
+    height: 2px;
+    background: var(--surface2);
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar.active { display: block; }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--green));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+    width: 100%;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .status-bar {
+    font-size: 0.7rem;
+    color: var(--muted);
+    padding: 0 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎓</div>
+  <div>
+    <h1>STEM Mentor Society</h1>
+    <p>Multi-Agent AI Tutoring • Powered by Qwen Cloud</p>
+  </div>
+</header>
+
+<div class="agents-bar">
+  <div class="agent-chip chip-coordinator" id="chip-coordinator">🎓 Coordinator</div>
+  <div class="agent-chip chip-math" id="chip-math">🔢 Prof. Ada (Math)</div>
+  <div class="agent-chip chip-physics" id="chip-physics">⚛️ Dr. Newton (Physics)</div>
+  <div class="agent-chip chip-cs" id="chip-cs">💻 Eng. Turing (CS)</div>
+  <div class="agent-chip chip-chembio" id="chip-chembio">🧬 Dr. Curie (Chem/Bio)</div>
+  <div class="agent-chip chip-synthesizer" id="chip-synthesizer">✨ Synthesizer</div>
+</div>
+
+<div class="progress-bar" id="progressBar">
+  <div class="progress-bar-fill"></div>
+</div>
+
+<div class="main">
+  <div class="chat-panel">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🔬</div>
+        <h2>Ask any STEM question</h2>
+        <p>Our society of specialist AI agents will collaborate, debate, and synthesize a comprehensive answer just for you.</p>
+        <div class="agent-grid">
+          <div class="agent-card"><div class="emoji">🎓</div><div>Coordinator</div><div style="color:var(--muted);font-size:0.65rem;">Routes & decomposes</div></div>
+          <div class="agent-card"><div class="emoji">🔢</div><div>Prof. Ada</div><div style="color:var(--muted);font-size:0.65rem;">Mathematics</div></div>
+          <div class="agent-card"><div class="emoji">⚛️</div><div>Dr. Newton</div><div style="color:var(--muted);font-size:0.65rem;">Physics</div></div>
+          <div class="agent-card"><div class="emoji">💻</div><div>Eng. Turing</div><div style="color:var(--muted);font-size:0.65rem;">Computer Science</div></div>
+          <div class="agent-card"><div class="emoji">🧬</div><div>Dr. Curie</div><div style="color:var(--muted);font-size:0.65rem;">Chem / Biology</div></div>
+          <div class="agent-card"><div class="emoji">✨</div><div>Synthesizer</div><div style="color:var(--muted);font-size:0.65rem;">Unifies answers</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="options-row">
+        <select class="level-select" id="level">
+          <option value="middle_school">Middle School</option>
+          <option value="high_school" selected>High School</option>
+          <option value="undergraduate">Undergraduate</option>
+          <option value="graduate">Graduate</option>
+        </select>
+        <span style="font-size:0.75rem;color:var(--muted);">Try:</span>
+        <button class="example-btn" onclick="setExample(0)">How do computers sort data?</button>
+        <button class="example-btn" onclick="setExample(1)">Why does E=mc²?</button>
+        <button class="example-btn" onclick="setExample(2)">How does DNA store information?</button>
+        <button class="example-btn" onclick="setExample(3)">Explain neural networks mathematically</button>
+      </div>
+      <div class="input-row">
+        <div class="input-wrap">
+          <textarea id="question" placeholder="Ask a STEM question — our agents will collaborate to answer it..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        </div>
+        <button class="btn-send" id="sendBtn" onclick="sendQuestion()">Ask Society ↗</button>
+      </div>
+      <div class="status-bar" id="statusBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = [
+  "How do computers sort data? What algorithms exist and how do they compare?",
+  "Why does E=mc²? What does it mean physically and mathematically?",
+  "How does DNA store information? What's the chemistry and information theory behind it?",
+  "Explain how neural networks learn. What's the math and CS behind backpropagation?"
+];
+
+const AGENT_INFO = {
+  coordinator: { emoji: '🎓', name: 'Coordinator', chipId: 'chip-coordinator' },
+  math:        { emoji: '🔢', name: 'Prof. Ada',   chipId: 'chip-math' },
+  physics:     { emoji: '⚛️', name: 'Dr. Newton',  chipId: 'chip-physics' },
+  cs:          { emoji: '💻', name: 'Eng. Turing', chipId: 'chip-cs' },
+  chembio:     { emoji: '🧬', name: 'Dr. Curie',   chipId: 'chip-chembio' },
+  synthesizer: { emoji: '✨', name: 'Synthesizer', chipId: 'chip-synthesizer' },
+};
+
+let ws = null;
+let isRunning = false;
+
+function setExample(i) {
+  document.getElementById('question').value = EXAMPLES[i];
+  autoResize(document.getElementById('question'));
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendQuestion();
+  }
+}
+
+function setChipActive(agentKey, active) {
+  const info = AGENT_INFO[agentKey];
+  if (!info) return;
+  const chip = document.getElementById(info.chipId);
+  if (!chip) return;
+  if (active) chip.classList.add('active');
+  else chip.classList.remove('active');
+}
+
+function deactivateAllChips() {
+  Object.values(AGENT_INFO).forEach(info => {
+    const chip = document.getElementById(info.chipId);
+    if (chip) chip.classList.remove('active');
+  });
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/^• (.+)$/gm, '<li>$1</li>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hpuol])/gm, '')
+    .replace(/\n/g, '<br>');
+}
+
+function appendMessage(agent, type, content, roundNum) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const info = AGENT_INFO[agent] || { emoji: '?', name: agent };
+  const messages = document.getElementById('messages');
+
+  if (type === 'status' && content.includes('"done"')) return;
+
+  if (type === 'debate' && roundNum === 1) {
+    const debateHeader = document.createElement('div');
+    debateHeader.className = 'debate-header';
+    debateHeader.textContent = `⚡ AGENT DEBATE — Round ${roundNum}`;
+    messages.appendChild(debateHeader);
+  }
+
+  const msg = document.createElement('div');
+  msg.className = `msg agent-${agent}`;
+
+  let badgeClass = `badge-${type === 'final' ? 'final' : type === 'debate' ? 'debate' : type === 'thinking' ? 'thinking' : type === 'status' ? 'status' : 'speaking'}`;
+  let badgeText = type === 'final' ? 'Synthesis' : type === 'debate' ? `Debate R${roundNum}` : type === 'thinking' ? 'Thinking' : type === 'status' ? 'Status' : 'Speaking';
+
+  let contentHtml;
+  if (type === 'final') {
+    contentHtml = `<div class="synthesis-container">
+      <div class="synthesis-title">✨ Final Synthesis</div>
+      <div>${renderMarkdown(content)}</div>
+    </div>`;
+  } else if (type === 'thinking') {
+    contentHtml = `<div class="msg-content thinking-style">${content} <span class="thinking-dots"></span></div>`;
+  } else {
+    contentHtml = `<div class="msg-content">${renderMarkdown(content)}</div>`;
+  }
+
+  msg.innerHTML = `
+    <div class="msg-avatar">${info.emoji}</div>
+    <div class="msg-body">
+      <div class="msg-header">
+        <span class="msg-name">${info.name}</span>
+        <span class="msg-type-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      ${contentHtml}
+    </div>`;
+
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function sendQuestion() {
+  if (isRunning) return;
+  const q = document.getElementById('question').value.trim();
+  if (!q) return;
+
+  const level = document.getElementById('level').value;
+  isRunning = true;
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('sendBtn').textContent = 'Thinking...';
+  document.getElementById('progressBar').classList.add('active');
+  document.getElementById('statusBar').textContent = 'Connecting to agent society...';
+
+  appendMessage('coordinator', 'status', `**New session started**\n\nQuestion: "${q}"\nStudent level: ${level}`);
+
+  const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${protocol}://${location.host}/api/ws/session`);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ question: q, student_level: level }));
+    document.getElementById('statusBar').textContent = 'Agents are deliberating...';
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.done) {
+        finish();
+        return;
+      }
+      if (data.error) {
+        appendMessage('coordinator', 'status', `Error: ${data.error}`);
+        finish();
+        return;
+      }
+      const { agent, type, content, round } = data;
+      setChipActive(agent, true);
+      setTimeout(() => setChipActive(agent, false), 2000);
+      appendMessage(agent, type, content, round);
+      document.getElementById('statusBar').textContent = `${AGENT_INFO[agent]?.name || agent} is ${type}...`;
+    } catch {}
+  };
+
+  ws.onerror = () => {
+    appendMessage('coordinator', 'status', 'Connection error. Is the server running?');
+    finish();
+  };
+
+  ws.onclose = () => { if (isRunning) finish(); };
+}
+
+function finish() {
+  isRunning = false;
+  ws = null;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('sendBtn').textContent = 'Ask Society ↗';
+  document.getElementById('progressBar').classList.remove('active');
+  document.getElementById('statusBar').textContent = 'Session complete ✓';
+  deactivateAllChips();
+  document.getElementById('question').value = '';
+  autoResize(document.getElementById('question'));
+}
+</script>
+</body>
+</html>
